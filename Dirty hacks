@@ -1,0 +1,291 @@
+-- Load Rayfield Library
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Troll.God Premium Script for SW2",
+    LoadingTitle = "Troll.God",
+    LoadingSubtitle = "Mobile Optimized!",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "TrollGodSW2",
+        FileName = "SW2_Config"
+    },
+    KeySystem = false,
+})
+
+-- Variables
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local runService = game:GetService("RunService")
+local flyEnabled = false
+local espEnabled = false
+local autoPickupEnabled = false
+local onePunchEnabled = false
+local selectedPlayer = nil
+
+-- Utility Functions
+local function enableFly()
+    if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    flyEnabled = true
+    local bodyGyro = Instance.new("BodyGyro")
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyGyro.Parent = localPlayer.Character.HumanoidRootPart
+    bodyVelocity.Parent = localPlayer.Character.HumanoidRootPart
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.CFrame = localPlayer.Character.HumanoidRootPart.CFrame
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+    runService.Heartbeat:Connect(function()
+        if flyEnabled then
+            bodyVelocity.Velocity = localPlayer.Character.HumanoidRootPart.CFrame.LookVector * 50
+        else
+            bodyGyro:Destroy()
+            bodyVelocity:Destroy()
+        end
+    end)
+end
+
+local function disableFly()
+    flyEnabled = false
+end
+
+local function setWalkSpeed(speed)
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        localPlayer.Character.Humanoid.WalkSpeed = speed
+    end
+end
+
+local function setInvisible()
+    if localPlayer.Character then
+        for _, part in pairs(localPlayer.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 1
+            end
+        end
+        localPlayer.Character.Head.face:Destroy()
+    end
+end
+
+local function setVisible()
+    if localPlayer.Character then
+        for _, part in pairs(localPlayer.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0
+            end
+        end
+    end
+end
+
+local function enableESP()
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            if not player.Character:FindFirstChild("Highlight") then
+                local highlight = Instance.new("Highlight")
+                highlight.Parent = player.Character
+                highlight.FillTransparency = 1
+                highlight.OutlineTransparency = 0
+                highlight.OutlineColor = Color3.new(1, 0, 0) -- Red outline
+            end
+        end
+    end
+    espEnabled = true
+end
+
+local function disableESP()
+    for _, player in pairs(players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("Highlight") then
+            player.Character.Highlight:Destroy()
+        end
+    end
+    espEnabled = false
+end
+
+local function autoPickupItems()
+    runService.Heartbeat:Connect(function()
+        if autoPickupEnabled and localPlayer.Character then
+            for _, item in pairs(workspace:GetChildren()) do
+                if item:IsA("Part") and (item.Position - localPlayer.Character.PrimaryPart.Position).Magnitude < 50 then
+                    firetouchinterest(localPlayer.Character.PrimaryPart, item, 0)
+                    firetouchinterest(localPlayer.Character.PrimaryPart, item, 1)
+                end
+            end
+        end
+    end)
+end
+
+local function killPlayer(targetPlayer)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+        targetPlayer.Character.Humanoid.Health = 0
+    end
+end
+
+local function killAllPlayers()
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.Health = 0
+        end
+    end
+end
+
+local function enableGodmode()
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        local humanoid = localPlayer.Character.Humanoid
+        humanoid.MaxHealth = math.huge
+        humanoid.Health = math.huge
+    end
+end
+
+local function enableOnePunch()
+    runService.Heartbeat:Connect(function()
+        if onePunchEnabled and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            for _, player in pairs(players:GetPlayers()) do
+                if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+                    local humanoid = player.Character.Humanoid
+                    local distance = (localPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if distance < 5 then
+                        humanoid.Health = 0
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- Tabs and Features
+-- Player Tab
+local PlayerTab = Window:CreateTab("Player", 4483362458) -- Player Icon
+
+PlayerTab:CreateButton({
+    Name = "Fly",
+    Callback = function()
+        enableFly()
+    end,
+})
+
+PlayerTab:CreateButton({
+    Name = "Unfly",
+    Callback = function()
+        disableFly()
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "Set Walk Speed",
+    Range = {16, 100},
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 50,
+    Flag = "WalkSpeed",
+    Callback = function(Value)
+        setWalkSpeed(Value)
+    end,
+})
+
+PlayerTab:CreateButton({
+    Name = "Invisible",
+    Callback = function()
+        setInvisible()
+    end,
+})
+
+PlayerTab:CreateButton({
+    Name = "Visible",
+    Callback = function()
+        setVisible()
+    end,
+})
+
+PlayerTab:CreateButton({
+    Name = "Enable Godmode",
+    Callback = function()
+        enableGodmode()
+    end,
+})
+
+-- AutoFarm Tab
+local AutoFarmTab = Window:CreateTab("AutoFarm", 6031302951) -- Coin Icon
+
+AutoFarmTab:CreateToggle({
+    Name = "Auto Pickup",
+    CurrentValue = false,
+    Flag = "AutoPickup",
+    Callback = function(Value)
+        autoPickupEnabled = Value
+        if autoPickupEnabled then
+            autoPickupItems()
+        end
+    end,
+})
+
+-- ESP Tab
+local ESPTab = Window:CreateTab("ESP", 6034287518) -- Eye Icon
+
+ESPTab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Flag = "ESPEnabled",
+    Callback = function(Value)
+        if Value then
+            enableESP()
+        else
+            disableESP()
+        end
+    end,
+})
+
+-- Annoy Tab
+local AnnoyTab = Window:CreateTab("Annoy", 6031280882) -- Troll Icon
+
+AnnoyTab:CreateDropdown({
+    Name = "Select Player to Kill",
+    Options = {},
+    CurrentOption = "None",
+    Flag = "SelectedPlayer",
+    Callback = function(Value)
+        selectedPlayer = Value
+    end,
+})
+
+AnnoyTab:CreateButton({
+    Name = "Kill Selected Player",
+    Callback = function()
+        local targetPlayer = players:FindFirstChild(selectedPlayer)
+        if targetPlayer then
+            killPlayer(targetPlayer)
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Player not found!",
+                Duration = 5,
+            })
+        end
+    end,
+})
+
+AnnoyTab:CreateButton({
+    Name = "Kill All Players",
+    Callback = function()
+        killAllPlayers()
+    end,
+})
+
+AnnoyTab:CreateToggle({
+    Name = "Enable One Punch",
+    CurrentValue = false,
+    Flag = "OnePunchEnabled",
+    Callback = function(Value)
+        onePunchEnabled = Value
+        if onePunchEnabled then
+            enableOnePunch()
+        end
+    end,
+})
+
+-- Initialize UI
+Rayfield:Notify({
+    Title = "Troll.God Script Loaded",
+    Content = "Enjoy trolling in SW2!",
+    Duration = 6.5,
+    Image = 4483362458
+})
